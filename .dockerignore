@@ -1,0 +1,13 @@
+# Ignore local virtual environments!
+.venv/
+__pycache__/
+
+# Ignore pre-compiled binaries (Docker will compile its own Linux version)
+flower_exchange
+
+# Ignore heavy local data files (except what's in test_data/)
+*.csv
+
+# Ignore Git history and VS Code settings
+.git/
+.vscode/
