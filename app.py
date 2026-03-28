@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 HOST = '127.0.0.1'
 PORT = 8080
-OUTPUT_FILE = 'network_rep.csv'
+OUTPUT_FILE = 'execution_report.csv'
 ENGINE_EXEC = './flower_exchange'
 
 @app.route('/')
@@ -83,7 +83,7 @@ def process_file():
 @app.route('/download')
 def download_file():
     if os.path.exists(OUTPUT_FILE):
-        return send_file(OUTPUT_FILE, as_attachment=True, download_name='execution_rep.csv')
+        return send_file(OUTPUT_FILE, as_attachment=True, download_name='execution_report.csv')
     return "File not found", 404
 
 if __name__ == '__main__':
