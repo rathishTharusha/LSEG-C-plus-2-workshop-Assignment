@@ -19,7 +19,7 @@ WORKDIR /app
 COPY . /app
 
 # 6. Compile the C++ matching engine natively inside the Linux container
-RUN chmod +x build.sh && ./build.sh
+RUN sed -i 's/\r$//' build.sh && chmod +x build.sh && bash build.sh
 
 # 7. Expose the port your Flask app is running on
 EXPOSE 5000
