@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSEG Flower Exchange</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Custom Scrollbar for the data table */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.5); }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-8">
+
+    <div class="text-center mb-8 mt-4">
+        <h1 class="text-4xl font-extrabold tracking-tight mb-2 bg-gradient-to-r from-blue-400 to-emerald-400 text-transparent bg-clip-text">
+            Flower Exchange
+        </h1>
+        <p class="text-slate-400">High-Frequency TCP Matching Engine</p>
+    </div>
+
+    {% if not show_results %}
+    <div class="glass-panel rounded-2xl p-8 max-w-lg w-full shadow-2xl mt-10">
+        <form id="uploadForm" action="/process" method="POST" enctype="multipart/form-data" class="flex flex-col items-center">
+            <div class="w-full mb-6">
+                <label class="block text-sm font-medium text-slate-300 mb-2" for="file_input">Upload orders.csv</label>
+                <input class="block w-full text-sm text-slate-400 border border-slate-600 rounded-lg cursor-pointer bg-slate-800 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 transition-all" 
+                       id="file_input" type="file" name="file" accept=".csv" required>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg transform transition hover:-translate-y-0.5 flex justify-center items-center">
+                <span id="btnText">Execute Trades</span>
+                <svg id="spinner" class="animate-spin ml-2 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function() {
+            document.getElementById('btnText').innerText = 'Processing via TCP...';
+            document.getElementById('spinner').classList.remove('hidden');
+            document.getElementById('submitBtn').classList.add('cursor-not-allowed', 'opacity-80');
+        });
+    </script>
+
+    {% else %}
+    <div class="w-full max-w-6xl animate-[fadeIn_0.5s_ease-out]">
+        
+        <div class="flex justify-between items-end mb-6">
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-1">Execution Report</h2>
+                <p class="text-emerald-400 text-sm">
+                    Processed <strong>{{ total_rows }}</strong> reports in <strong>{{ exec_time }} ms</strong>
+                </p>
+                <p class="text-slate-400 text-xs mt-1">Showing first 100 rows</p>
+            </div>
+            
+            <div class="flex gap-4">
+                <a href="/" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                    Upload New File
+                </a>
+                <a href="/download" class="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-bold py-2 px-6 rounded-lg shadow-lg transform transition hover:-translate-y-0.5 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Download Full CSV
+                </a>
+            </div>
+        </div>
+
+        <div class="glass-panel rounded-xl overflow-hidden shadow-2xl">
+            <div class="overflow-x-auto max-h-[600px]">
+                <table class="w-full text-sm text-left text-slate-300">
+                    <thead class="text-xs text-slate-400 uppercase bg-slate-800/50 sticky top-0 z-10 backdrop-blur-md">
+                        <tr>
+                            {% for header in headers %}
+                            <th scope="col" class="px-6 py-4 font-semibold">{{ header }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-700/50">
+                        {% for row in rows %}
+                        <tr class="hover:bg-slate-800/50 transition-colors">
+                            {% for cell in row %}
+                            <td class="px-6 py-3 whitespace-nowrap">
+                                {% if loop.index0 == 4 %} 
+                                    {% if cell == 'Fill' %}
+                                        <span class="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 font-medium">{{ cell }}</span>
+                                    {% elif cell == 'PFill' %}
+                                        <span class="px-2 py-1 rounded bg-blue-500/20 text-blue-400 font-medium">{{ cell }}</span>
+                                    {% elif cell == 'Rejected' %}
+                                        <span class="px-2 py-1 rounded bg-red-500/20 text-red-400 font-medium">{{ cell }}</span>
+                                    {% else %}
+                                        <span class="px-2 py-1 rounded bg-slate-500/20 text-slate-300 font-medium">{{ cell }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    {{ cell }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</body>
+</html>
